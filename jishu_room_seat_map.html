@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>自習室 混雑状況</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Noto Sans JP", sans-serif;
+    background: #f5f7fa;
+    color: #222;
+  }
+  .wrap { max-width: 900px; margin: auto; padding: 20px; }
+  h1 { text-align: center; margin: 5px 0 8px; }
+  .note { text-align:center; color:#666; font-size:14px; margin-bottom:18px; }
+  .summary {
+    background:white; border-radius:16px; padding:16px; margin-bottom:18px;
+    box-shadow:0 2px 8px rgba(0,0,0,.08); text-align:center;
+  }
+  .count { font-size:28px; font-weight:700; }
+  .status { font-size:18px; margin-top:5px; font-weight:600; }
+  .legend { display:flex; justify-content:center; gap:16px; margin-top:10px; font-size:13px; }
+  .dot { display:inline-block; width:13px; height:13px; border-radius:50%; margin-right:4px; vertical-align:-1px; }
+  .free { background:#dff4e5; border:2px solid #55a96b; }
+  .used { background:#ffe1e1; border:2px solid #e05b5b; }
+  section {
+    background:white; border-radius:16px; padding:16px; margin-bottom:18px;
+    box-shadow:0 2px 8px rgba(0,0,0,.08);
+  }
+  h2 { margin:0 0 12px; font-size:20px; }
+  .grid {
+    display:grid;
+    grid-template-columns:repeat(5, 1fr);
+    gap:8px;
+  }
+  .seat {
+    min-height:68px; border-radius:10px; cursor:pointer;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    font-weight:600; user-select:none; transition:.12s;
+  }
+  .seat small { font-size:11px; font-weight:400; margin-top:2px; }
+  .seat.free { background:#e8f7ec; border:2px solid #63b277; }
+  .seat.used { background:#ffe7e7; border:2px solid #e06464; }
+  .seat:hover { transform:translateY(-1px); }
+  .two-grid { grid-template-columns:repeat(4, 1fr); }
+  .reset {
+    display:block; margin:5px auto 0; padding:9px 16px;
+    border:1px solid #bbb; border-radius:8px; background:white; cursor:pointer;
+  }
+  @media(max-width:600px) {
+    .grid { grid-template-columns:repeat(4, 1fr); gap:6px; }
+    .two-grid { grid-template-columns:repeat(2, 1fr); }
+    .seat { min-height:60px; font-size:13px; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>自習室の混雑状況</h1>
+  <div class="note">利用したい席をタップすると「利用中」に切り替わります</div>
+
+  <div class="summary">
+    <div class="count"><span id="usedCount">0</span> / 54席</div>
+    <div class="status" id="status">🟢 空いています</div>
+    <div class="legend">
+      <span><span class="dot" style="background:#dff4e5;border:2px solid #55a96b"></span>空席</span>
+      <span><span class="dot" style="background:#ffe1e1;border:2px solid #e05b5b"></span>利用中</span>
+    </div>
+  </div>
+
+  <section>
+    <h2>1人掛け（50席）</h2>
+    <div class="grid" id="singleGrid"></div>
+  </section>
+
+  <section>
+    <h2>2人掛け（4席）</h2>
+    <div class="grid two-grid" id="doubleGrid"></div>
+  </section>
+
+  <button class="reset" onclick="resetAll()">すべて空席に戻す</button>
+</div>
+
+<script>
+const state = {
+  single: Array(50).fill(false),
+  double: Array(4).fill(false)
+};
+
+function createSeats(id, arr, label) {
+  const grid = document.getElementById(id);
+  arr.forEach((used, i) => {
+    const el = document.createElement("div");
+    el.className = "seat " + (used ? "used" : "free");
+    el.dataset.type = label;
+    el.dataset.index = i;
+    el.innerHTML = `${label === "single" ? "1人掛け" : "2人掛け"} ${i+1}<small>${used ? "利用中" : "空席"}</small>`;
+    el.onclick = () => {
+      arr[i] = !arr[i];
+      update();
+    };
+    grid.appendChild(el);
+  });
+}
+
+function update() {
+  document.getElementById("singleGrid").innerHTML = "";
+  document.getElementById("doubleGrid").innerHTML = "";
+  createSeats("singleGrid", state.single, "single");
+  createSeats("doubleGrid", state.double, "double");
+
+  const used = state.single.filter(Boolean).length + state.double.filter(Boolean).length;
+  document.getElementById("usedCount").textContent = used;
+
+  const ratio = used / 54;
+  const status = document.getElementById("status");
+  if (ratio >= .9) status.textContent = "🔴 ほぼ満席";
+  else if (ratio >= .6) status.textContent = "🟡 やや混雑";
+  else status.textContent = "🟢 空いています";
+}
+
+function resetAll() {
+  if (!confirm("すべて空席に戻しますか？")) return;
+  state.single.fill(false);
+  state.double.fill(false);
+  update();
+}
+
+update();
+</script>
+</body>
+</html>
